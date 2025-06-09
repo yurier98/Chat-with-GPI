@@ -1,4 +1,5 @@
 import { getDocumentProxy, extractText } from 'unpdf'
+import { supabase } from '../utils/supabaseClient'
 
 export async function extractTextFromPDF(file: File): Promise<string> {
   const buffer = await file.arrayBuffer()
@@ -8,20 +9,39 @@ export async function extractTextFromPDF(file: File): Promise<string> {
 }
 
 export async function uploadPDF(file: File, sessionId: string): Promise<string> {
-  const blob = await hubBlob().put(`${Date.now()}-${file.name}`, file, { prefix: sessionId })
-  return blob.pathname
+  const fileName = `${Date.now()}-${file.name}`
+  const filePath = `${sessionId}/${fileName}`
+
+  const { data, error } = await supabase.storage
+    .from('documents')
+    .upload(filePath, file, {
+      contentType: 'application/pdf',
+      upsert: false,
+    })
+
+  if (error)
+    throw error
+
+  // Obtener la URL pública del archivo
+  const { data: { publicUrl } } = supabase.storage
+    .from('documents')
+    .getPublicUrl(filePath)
+
+  return publicUrl
 }
 
-export async function insertDocument(file: File, textContent: string, sessionId: string, r2Url: string) {
+export async function insertDocument(file: File, textContent: string, sessionId: string, storageUrl: string) {
   const row = {
+    id: crypto.randomUUID(),
     name: file.name,
     size: file.size,
-    textContent,
-    sessionId,
-    r2Url,
+    text_content: textContent,
+    session_id: sessionId,
+    storage_url: storageUrl,
   }
-
-  return useDrizzle().insert(tables.documents).values(row).returning({ insertedId: tables.documents.id })
+  const { data, error } = await supabase.from('documents').insert(row).select('id')
+  if (error) throw error
+  return [{ insertedId: data[0].id }]
 }
 
 export async function processVectors(
@@ -45,28 +65,34 @@ export async function processVectors(
       const embeddingBatch: number[][] = embeddingResult.data
 
       // Insert chunks into the database
-      const chunkInsertResults = await useDrizzle()
-        .insert(tables.documentChunks)
-        .values(
+      const { data: chunkInsertResults, error: chunkError } = await supabase
+        .from('document_chunks')
+        .insert(
           chunkBatch.map(chunk => ({
+            id: crypto.randomUUID(),
             text: chunk,
-            sessionId,
-            documentId,
-          })),
+            session_id: sessionId,
+            document_id: documentId,
+          }))
         )
-        .returning({ insertedChunkId: tables.documentChunks.id })
+        .select('id')
+      if (chunkError) throw chunkError
+      const chunkIds = chunkInsertResults.map(result => result.id)
 
-      // Extract the inserted chunk IDs
-      const chunkIds = chunkInsertResults.map(result => result.insertedChunkId)
-
-      // Insert vectors into Vectorize index
-      await hubVectorize('documents').insert(
-        embeddingBatch.map((embedding, i) => ({
-          id: chunkIds[i],
-          values: embedding,
-          namespace: 'default',
-          metadata: { sessionId, documentId, chunkId: chunkIds[i], text: chunkBatch[i] },
-        })),
+      // Insertar los vectores en Supabase
+      await Promise.all(
+        embeddingBatch.map((embedding, i) =>
+          supabase.from('document_vectors').insert({
+            document_id: documentId,
+            embedding,
+            metadata: {
+              sessionId,
+              documentId,
+              chunkId: chunkIds[i],
+              text: chunkBatch[i],
+            },
+          })
+        )
       )
 
       progress += (chunkBatch.length / chunks.length) * 100

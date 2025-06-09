@@ -62,7 +62,7 @@ const queries = useQueries()
     <USlideover title="Query information">
       <div v-show="relevantContext.isProvided">
         <UButton color="neutral" variant="outline" class="inline-l">
-          See relevant context
+          Ver contexto pertinente
         </UButton>
       </div>
 

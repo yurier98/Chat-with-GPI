@@ -1,5 +1,5 @@
 import type { RoleScopedChatInput } from '@cloudflare/workers-types'
-import { inArray, sql } from 'drizzle-orm'
+import { supabase } from './supabaseClient'
 
 async function rewriteToQueries(content: string): Promise<string[]> {
   const prompt = `Given the following user message, rewrite it into 5 distinct queries that could be used to search for relevant information. Each query should focus on different aspects or potential interpretations of the original message. No questions, just a query maximizing the chance of finding relevant information.
@@ -22,32 +22,21 @@ Provide 5 queries, one per line and nothing else:`
 
 type DocumentChunkResult = DocumentChunk & { rank: number }
 
-async function searchDocumentChunks(searchTerms: string[]) {
-  const queries = searchTerms.filter(Boolean).map(
-    (term) => {
-      const sanitizedTerm = term.trim().replace(/[^\w\s]/g, '')
-      return sql`
-        SELECT document_chunks.*, document_chunks_fts.rank
-        FROM document_chunks_fts
-        JOIN document_chunks ON document_chunks_fts.id = document_chunks.id
-        WHERE document_chunks_fts MATCH ${sanitizedTerm}
-        ORDER BY rank DESC
-        LIMIT 5
-      `
-    },
-  )
+async function searchDocumentChunks(searchTerms: string[], sessionId: string) {
+  const results: DocumentChunkResult[] = []
 
-  const results = await Promise.all(
-    queries.map(async (query) => {
-      const { results } = (await useDrizzle().run(query)) as { results: DocumentChunkResult[] }
-      return results
-    }),
-  )
+  for (const term of searchTerms.filter(Boolean)) {
+    const { data, error } = await supabase
+      .from('document_chunks')
+      .select('*')
+      .ilike('text', `%${term}%`)
+      .eq('session_id', sessionId)
+      .limit(5)
 
-  return results
-    .flat()
-    .sort((a, b) => b.rank - a.rank)
-    .slice(0, 10)
+    if (error) throw error
+    results.push(...data.map((row: any) => ({ ...row, rank: 1 })))
+  }
+  return results.slice(0, 10)
 }
 
 // Helper function to perform reciprocal rank fusion
@@ -81,34 +70,40 @@ function performReciprocalRankFusion(
 const SYSTEM_MESSAGE = `You are a helpful assistant that answers questions based on the provided context. When giving a response, always include the source of the information in the format [1], [2], [3] etc.`
 
 async function queryVectorIndex(queries: string[], sessionId: string) {
+  // Genera los embeddings para las queries (puedes seguir usando tu modelo preferido)
   const queryVectors = await Promise.all(
     queries.map(q => hubAI().run('@cf/baai/bge-large-en-v1.5', { text: [q] })),
   )
 
+  // Para cada embedding, busca los chunks más similares en Supabase
   const allResults = await Promise.all(
-    queryVectors.map(qv =>
-      hubVectorize('documents').query(qv.data[0], {
-        topK: 5,
-        returnValues: true,
-        returnMetadata: 'all',
-        namespace: 'default',
-        filter: {
-          sessionId,
-        },
-      }),
-    ),
+    queryVectors.map(async (qv) => {
+      const { data, error } = await supabase.rpc('match_document_vectors', {
+        query_embedding: qv.data[0],
+        match_count: 5,
+        session_id: sessionId,
+      })
+      if (error) throw error
+      // Adaptar el formato para que sea compatible con el resto del código
+      return {
+        matches: data.map((row: any) => ({
+          id: row.chunk_id,
+          score: row.similarity,
+        })),
+      }
+    }),
   )
 
   return allResults
 }
 
 async function getRelevantDocuments(ids: string[]) {
-  const relevantDocs = await useDrizzle()
-    .select({ text: tables.documentChunks.text })
-    .from(tables.documentChunks)
-    .where(inArray(tables.documentChunks.id, ids))
-
-  return relevantDocs
+  const { data, error } = await supabase
+    .from('document_chunks')
+    .select('text, id')
+    .in('id', ids)
+  if (error) throw error
+  return data
 }
 
 export async function processUserQuery({ sessionId, messages }: { sessionId: string, messages: RoleScopedChatInput[] }, streamResponse: (message: object) => Promise<void>) {
@@ -126,7 +121,7 @@ export async function processUserQuery({ sessionId, messages }: { sessionId: str
   await streamResponse(queryingVectorIndexMsg)
 
   const [fullTextSearchResults, vectorIndexResults] = await Promise.all([
-    searchDocumentChunks(queries),
+    searchDocumentChunks(queries, sessionId),
     queryVectorIndex(queries, sessionId),
   ])
 

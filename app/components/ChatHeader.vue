@@ -2,7 +2,7 @@
   <div class="flex items-center justify-between px-4 h-14 shrink-0">
     <div class="flex items-center gap-x-4">
       <h2 class="text-xl text-zinc-900 dark:text-white font-semibold">
-        Chat with PDF
+        GPI Assistant
       </h2>
     </div>
     <div class="flex items-center gap-x-4">

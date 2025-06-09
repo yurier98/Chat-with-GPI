@@ -1,12 +1,10 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  compatibilityDate: '2024-07-30',
-  // https://nuxt.com/docs/getting-started/upgrade#testing-nuxt-4
-  future: { compatibilityVersion: 4 },
 
   // https://nuxt.com/modules
   modules: [
     '@nuxthub/core',
+    '@nuxtjs/supabase',
     '@nuxt/eslint',
     '@nuxt/ui',
     '@nuxtjs/mdc',
@@ -14,20 +12,41 @@ export default defineNuxtConfig({
     'nuxthub-ratelimit',
   ],
 
+  // https://devtools.nuxt.com
+  devtools: { enabled: true },
+  // https://nuxt.com/docs/getting-started/upgrade#testing-nuxt-4
+  future: { compatibilityVersion: 4 },
+  compatibilityDate: '2024-07-30',
+
+  nitro: {
+    experimental: {
+      openAPI: true,
+    },
+  },
+
   // https://hub.nuxt.com/docs/getting-started/installation#options
   hub: {
     ai: true,
-    blob: true,
+    blob: false,
     cache: true,
-    database: true,
+    database: false,
     kv: true,
-    vectorize: {
-      documents: {
-        dimensions: 1024,
-        metric: 'euclidean',
-        metadataIndexes: {
-          sessionId: 'string',
-        },
+    // vectorize: {
+    //   documents: {
+    //     dimensions: 1024,
+    //     metric: 'euclidean',
+    //     metadataIndexes: {
+    //       sessionId: 'string',
+    //     },
+    //   },
+    // },
+  },
+
+  // https://eslint.nuxt.com
+  eslint: {
+    config: {
+      stylistic: {
+        quotes: 'single',
       },
     },
   },
@@ -41,21 +60,11 @@ export default defineNuxtConfig({
     },
   },
 
-  nitro: {
-    experimental: {
-      openAPI: true,
-    },
+  // Configuración de Supabase
+  supabase: {
+    redirect: false,
+    url: process.env.SUPABASE_URL,
+    key: process.env.SUPABASE_KEY,
+  // serviceKey: process.env.SUPABASE_SERVICE_KEY,
   },
-
-  // https://eslint.nuxt.com
-  eslint: {
-    config: {
-      stylistic: {
-        quotes: 'single',
-      },
-    },
-  },
-
-  // https://devtools.nuxt.com
-  devtools: { enabled: true },
 })
