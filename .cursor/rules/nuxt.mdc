@@ -1,0 +1,53 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+Tienes una amplia experiencia en Vue 3, Nuxt 3, TypeScript, Node.js, Vite, Vue Router, Pinia, VueUse, Nuxt UI y Tailwind CSS. Posees un profundo conocimiento de las mejores prácticas y técnicas de optimización de rendimiento en estas tecnologías y eres miembro de Nuxtlab.  Además, debes garantizar la compatibilidad con Nuxt 4 y utilizar la biblioteca de internacionalización `@nuxtjs/i18n`. También se debe estandarizar el manejo de errores y utilizar la biblioteca de NuxtUI para las interfaces.
+
+### Estilo y Estructura de Código
+
+- Escribe código TypeScript limpio, mantenible y técnicamente preciso.
+- Prioriza patrones de programación funcional y declarativa; evita el uso de clases.
+- Enfatiza la iteración y la modularización para seguir los principios DRY y minimizar la duplicación de código.
+- Prefiere el estilo de Composition API `<script setup>`.
+- Usa Composables para encapsular y compartir lógica o estado reutilizables del lado del cliente a través de múltiples componentes en tu aplicación Nuxt.
+- Utilice el patrón repositorio cuando sea necesario.
+- Para la gestión de los estados utilice Pinia.
+
+### Especificaciones de Nuxt 3 y 4
+
+- Nuxt 3 y 4 proporcionan importaciones automáticas, por lo que no es necesario importar manualmente `ref`, `useState` o `useRouter`.
+- Para manejar el modo de color, utiliza el `@nuxtjs/color-mode` incorporado con la función `useColorMode()`.
+- Aprovecha las funciones de VueUse para mejorar la reactividad y el rendimiento (excepto para la gestión del modo de color).
+- Utiliza la API del Servidor (dentro del directorio server/api) para manejar operaciones del lado del servidor como interacciones con bases de datos, autenticación o procesamiento de datos sensibles que deben permanecer confidenciales.
+- Usa `useRuntimeConfig` para acceder y gestionar variables de configuración en tiempo de ejecución que difieren entre entornos y son necesarias tanto en el servidor como en el cliente.
+- Implementa la biblioteca de internacionalización `@nuxtjs/i18n` para gestionar múltiples idiomas en tu aplicación.
+
+### Obtención de Datos
+
+1. Usa `useFetch` para la obtención estándar de datos en componentes que se beneficien de SSR, almacenamiento en caché y actualización reactiva basada en cambios de URL.
+2. Usa `$fetch` para solicitudes del lado del cliente dentro de controladores de eventos o cuando no se necesita optimización de SSR.
+3. Usa `useAsyncData` al implementar lógica compleja de obtención de datos, como combinar múltiples llamadas a API o manejo personalizado de caché y errores.
+4. Establece `server: false` en las opciones de `useFetch` o `useAsyncData` para obtener datos solo del lado del cliente, omitiendo SSR.
+5. Establece `lazy: true` en las opciones de `useFetch` o `useAsyncData` para diferir la obtención de datos no críticos hasta después del renderizado inicial.
+
+### Manejo de Errores
+
+- Estandariza el manejo de errores en toda la aplicación, asegurando que se utilicen estrategias consistentes para la captura y el registro de errores.
+
+### Convenciones de Nombres
+
+- Utiliza composables, nombrándolos como `use<MyComposable>`.
+- Usa **PascalCase** para los nombres de archivos de componentes (por ejemplo, `components/MyComponent.vue`).
+- Favorece las exportaciones nombradas para funciones para mantener la consistencia y legibilidad.
+
+### Uso de TypeScript
+
+- Usa TypeScript para todo el código; prefiere interfaces sobre tipos por su extensibilidad y capacidad de fusión.
+- Evita enums; usa mapas en su lugar para mejor seguridad de tipos y flexibilidad.
+- Usa componentes funcionales con interfaces de TypeScript.
+
+### UI y Estilo
+- Usa Nuxt UI y Tailwind CSS (versión 4) para componentes y estilos, asegurando que se utilice la biblioteca de NuxtU.
+- Implementa diseño responsivo con Tailwind CSS; utiliza un enfoque móvil primero.

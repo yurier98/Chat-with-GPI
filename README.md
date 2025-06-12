@@ -1,18 +1,18 @@
 # Chat with PDF 🗣️💬📄
 
-Chat with PDF is a full-stack AI-powered application that lets you to ask questions to PDF documents.
+Chat with PDF es una aplicación completa basada en IA que te permite hacer preguntas a documentos PDF.
 
-The application is running with server-side rendering on the edge using Cloudflare Pages.
+La aplicación se ejecuta con renderizado del lado del servidor en el borde utilizando Cloudflare Pages.
 
-You can deploy it with zero configuration on your Cloudflare account using NuxtHub:
+Puede implementarla sin necesidad de configuración en su cuenta de Cloudflare utilizando NuxtHub:
 
 [![Deploy to NuxtHub](https://hub.nuxt.com/button.svg)](https://hub.nuxt.com/new?template=chat-with-pdf)
 
 ### 🚀 Key Features
 
-- **Hybrid RAG**: Hybrid RAG using Full-Text Search on D1 and Vector Search on Vectorize
-- **Streamed Responses**: Information is streamed real-time to the UI using Server-Sent Events
-- **High-Performance**: Deployed on the edge with server-side rendering using Cloudflare Pages
+- **Hybrid RAG**: Búsqueda híbrida RAG utilizando búsqueda de texto completo en Supabase y búsqueda vectorial en Supabase Vector
+- **Respuestas en streaming**: La información se transmite en tiempo real a la interfaz de usuario mediante Server-Sent Events
+- **Alto rendimiento**: Desplegado en el edge con renderizado del lado del servidor utilizando Cloudflare Pages y Supabase como backend
 
 <!-- ### 🎥 See It in Action
 
@@ -22,31 +22,61 @@ Ready to create? Visit [chat-with-pdf.nuxt.dev](https://chat-with-pdf.nuxt.dev) 
 
 ## 🛠 Tech Stack
 
-- [Nuxt](https://nuxt.com) - The Intuitive Vue Framework
-- [Nuxt UI](https://github.com/nuxt/ui) - Beautiful UI library with TailwindCSS
-- [Drizzle ORM](https://orm.drizzle.team/) - Powerful modern TypeScript ORM
-- [unpdf](https://github.com/unjs/unpdf) - Platform-agnostic version of [PDF.js](https://github.com/mozilla/pdf.js) for serverless environments
-- [NuxtHub Rate Limit](https://github.com/fayazara/nuxthub-ratelimit) - Ratelimiting requests
-- [NuxtHub](https://hub.nuxt.com) - Build & deploy to your Cloudflare account with zero configuration
-  - [`hubBlob()`](https://hub.nuxt.com/docs/features/blob) to store PDFs in Cloudflare R2
-  - [`hubDatabase()`](https://hub.nuxt.com/docs/features/blob) to store document chunks and full-text search on Cloudflare D1
-  - [`hubAI()`](https://hub.nuxt.com/docs/features/ai) to run Cloudflare AI models for LLM chat and generating text embeddings
-  - [`hubVectorize()`](https://hub.nuxt.com/docs/features/ai) to find relevant document context in Cloudflare Vectorize
-  - [`hubKV()`](https://hub.nuxt.com/docs/features/ai) for IP ratelimiting
+- [Nuxt](https://nuxt.com) - El framework intuitivo de Vue
+- [Nuxt UI](https://github.com/nuxt/ui) - Hermosa biblioteca UI con TailwindCSS
+- [Supabase](https://supabase.com) - Plataforma de backend como servicio
+  - Almacenamiento de documentos PDF
+  - Base de datos PostgreSQL para chunks de documentos
+  - Búsqueda vectorial con pgvector para embeddings
+- [unpdf](https://github.com/unjs/unpdf) - Versión agnóstica de plataforma de [PDF.js](https://github.com/mozilla/pdf.js) para entornos serverless
+- [NuxtHub Rate Limit](https://github.com/fayazara/nuxthub-ratelimit) - Limitación de solicitudes
+- [NuxtHub](https://hub.nuxt.com) - Construye y despliega en tu cuenta de Cloudflare sin configuración
+  - [`hubAI()`](https://hub.nuxt.com/docs/features/ai) para ejecutar modelos de IA de Cloudflare para chat LLM y generación de embeddings
+  - [`hubKV()`](https://hub.nuxt.com/docs/features/ai) para limitación de IP
 - [`npx nuxthub deploy`](https://github.com/nuxt-hub/cli) - To deploy the app on your Cloudflare account for free
 
-## 🏎️ How does it work?
+## 🔌 Configuración de Supabase
+
+Esta aplicación utiliza Supabase como backend para:
+
+1. **Almacenamiento**: Guardar los archivos PDF subidos
+2. **Base de datos**: Almacenar chunks de documentos y sus metadatos
+3. **Búsqueda vectorial**: Utiliza pgvector para búsquedas semánticas eficientes
+
+### Estructura de la base de datos
+
+La aplicación utiliza las siguientes tablas en Supabase:
+
+- `documents`: Almacena metadatos de los documentos PDF
+- `document_chunks`: Almacena fragmentos de texto extraídos de los PDFs
+- `document_vectors`: Almacena los embeddings vectoriales para búsqueda semántica
+
+### Configuración
+
+Para conectar tu propia instancia de Supabase:
+
+1. Crea un proyecto en [Supabase](https://supabase.com)
+2. Ejecuta las migraciones SQL del directorio `supabase/migrations`
+3. Configura las variables de entorno:
+
+```bash
+SUPABASE_URL=https://tu-proyecto.supabase.co
+SUPABASE_KEY=tu-clave-anon-key
+SUPABASE_SERVICE_KEY=tu-clave-service-role
+```
+
+## 🏎️ ¿Cómo funciona?
 
 ![Hybrid Search RAG](./.github/hybrid-rag.png)
 
-This project uses a combination of classical Full Text Search (sparse) against Cloudflare D1 and Hybrid Search with embeddings against Vectorize (dense) to provide the best of both worlds providing the most applicable context to the LLM.
+Este proyecto utiliza una combinación de búsqueda de texto completo clásica (sparse) contra Supabase PostgreSQL y búsqueda híbrida con embeddings contra Supabase Vector (dense) para proporcionar lo mejor de ambos mundos, ofreciendo el contexto más aplicable al LLM.
 
-The way it works is this:
+El funcionamiento es el siguiente:
 
-1. We take user input and we rewrite it to 5 different queries using an LLM
-2. We run each of these queries against our both datastores - D1 database using BM25 for full-text search and Vectorize for dense retrieval
-3. We take the results from both datastores and we merge them together using [Reciprocal Rank Fusion](https://www.elastic.co/guide/en/elasticsearch/reference/current/rrf.html) which provides us with a single list of results
-4. We then take the top 10 results from this list and we pass them to the LLM to generate a response
+1. Tomamos la entrada del usuario y la reescribimos en 5 consultas diferentes utilizando un LLM
+2. Ejecutamos cada una de estas consultas contra nuestros dos almacenes de datos - Base de datos PostgreSQL de Supabase para búsqueda de texto completo y Supabase Vector para recuperación densa
+3. Tomamos los resultados de ambos almacenes de datos y los fusionamos utilizando [Reciprocal Rank Fusion](https://www.elastic.co/guide/en/elasticsearch/reference/current/rrf.html), lo que nos proporciona una única lista de resultados
+4. Luego tomamos los 10 mejores resultados de esta lista y los pasamos al LLM para generar una respuesta
 
 <sub>Credits: https://github.com/RafalWilinski/cloudflare-rag#hybrid-search-rag</sub>
 
