@@ -1,5 +1,14 @@
 // credits: https://github.com/ra-jeev/hub-chat/blob/main/app/composables/useAIChat.ts
 
+/**
+ * Composable para manejar la transmisión de datos desde un endpoint asíncrono.
+ * Permite recibir y procesar datos en chunks a medida que llegan, lo que es útil para manejar respuestas de stream.
+ *
+ * @template T - El tipo de datos que se espera recibir en cada chunk del stream.
+ * @param {string} endpoint - La URL del endpoint al que se realizará la solicitud.
+ * @param {Record<string, unknown> | FormData} body - El cuerpo de la solicitud, que puede ser un objeto de datos o un FormData.
+ * @returns {() => AsyncGenerator<T, void, unknown>} Una función que, cuando se llama, devuelve un `AsyncGenerator` que produce los chunks de datos del stream.
+ */
 export function useStream<T>(
   endpoint: string,
   body: Record<string, unknown> | FormData,

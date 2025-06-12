@@ -3,6 +3,14 @@
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters'
 import { uploadPDF, extractTextFromPDF, insertDocument, processVectors } from '../utils/upload'
 
+/**
+ * Manejador de eventos predeterminado para las solicitudes POST a esta ruta.
+ * Se encarga de la subida, procesamiento y vectorización de archivos PDF.
+ * Realiza validaciones de entrada, extrae texto del PDF, lo divide en chunks,
+ * genera embeddings y los almacena en la base de datos de Supabase.
+ *
+ * @param {H3Event} event - El objeto de evento de H3, que contiene la solicitud y la respuesta.
+ */
 export default defineEventHandler(async (event) => {
   const formData = await readFormData(event)
   const sessionId = formData.get('sessionId') as string

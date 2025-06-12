@@ -59,19 +59,19 @@ export type UploadStreamResponse = {
   chunks: undefined
   error: undefined
 } | {
-  message: 'Extracted text from PDF'
+  message: 'Extrayendo texto del PDF'
 
   progress: undefined
   chunks: undefined
   error: undefined
 } | {
-  message: 'Split text into chunks'
+  message: 'Dividiendo el texto en trozos'
 
   progress: undefined
   chunks: undefined
   error: undefined
 } | {
-  message: 'Inserted vectors'
+  message: 'Insertando vectores'
   chunks: number
 
   error: undefined
@@ -89,3 +89,52 @@ export interface Document {
   chunks: number | null
   progress?: string
 }
+
+// Definiciones de tipos para DocumentChunk y VectorizeMatches
+interface DocumentChunk {
+  id: string;
+  text: string;
+  session_id: string;
+  document_id: string;
+}
+
+interface VectorizeMatches {
+  matches: Array<{
+    id: string;
+    score: number;
+  }>;
+}
+
+declare global {
+  function hubAI(): {
+    run: (model: string, params: any) => Promise<any>;
+  };
+}
+
+export const quickChats = [
+  {
+    label: '¿Cómo se describe la gestión de la integración del proyecto?',
+    icon: 'i-heroicons-squares-2x2',
+  },
+  {
+    label: '¿Qué metodologías de gestión del alcance se mencionan?',
+    icon: 'i-heroicons-document-text',
+  },
+  {
+    label: '¿Cómo se aborda la gestión del tiempo y cronograma?',
+    icon: 'i-heroicons-clock',
+  },
+  {
+    label: '¿Qué estrategias de gestión de costos se detallan?',
+    icon: 'i-heroicons-currency-dollar',
+  },
+  {
+    label: '¿Cómo se maneja la gestión de la calidad en el proyecto?',
+    icon: 'i-heroicons-check-circle',
+  },
+  {
+    label: '¿Qué aspectos de la gestión de recursos humanos se cubren?',
+    icon: 'i-heroicons-users',
+  },
+
+]

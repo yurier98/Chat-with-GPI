@@ -1,6 +1,12 @@
 import { getDocumentProxy, extractText } from 'unpdf'
 import { supabase } from '../utils/supabaseClient'
 
+/**
+ * Extrae texto de un archivo PDF dado.
+ *
+ * @param {File} file - El archivo PDF a procesar.
+ * @returns {Promise<string>} Una promesa que resuelve con el contenido de texto extraído del PDF.
+ */
 export async function extractTextFromPDF(file: File): Promise<string> {
   const buffer = await file.arrayBuffer()
   const pdf = await getDocumentProxy(new Uint8Array(buffer))
@@ -8,6 +14,13 @@ export async function extractTextFromPDF(file: File): Promise<string> {
   return Array.isArray(result.text) ? result.text.join(' ') : result.text
 }
 
+/**
+ * Sube un archivo PDF al almacenamiento de Supabase.
+ *
+ * @param {File} file - El archivo PDF a subir.
+ * @param {string} sessionId - El ID de la sesión para organizar los archivos en el almacenamiento.
+ * @returns {Promise<string>} Una promesa que resuelve con la URL pública del archivo subido.
+ */
 export async function uploadPDF(file: File, sessionId: string): Promise<string> {
   const fileName = `${Date.now()}-${file.name}`
   const filePath = `${sessionId}/${fileName}`
@@ -30,6 +43,15 @@ export async function uploadPDF(file: File, sessionId: string): Promise<string> 
   return publicUrl
 }
 
+/**
+ * Inserta una entrada de documento en la tabla `documents` de Supabase.
+ *
+ * @param {File} file - El objeto File del documento.
+ * @param {string} textContent - El contenido de texto extraído del documento.
+ * @param {string} sessionId - El ID de la sesión asociada al documento.
+ * @param {string} storageUrl - La URL de almacenamiento del documento.
+ * @returns {Promise<Array<{ insertedId: string }>>} Una promesa que resuelve con un array que contiene el ID del documento insertado.
+ */
 export async function insertDocument(file: File, textContent: string, sessionId: string, storageUrl: string) {
   const row = {
     id: crypto.randomUUID(),
@@ -44,6 +66,15 @@ export async function insertDocument(file: File, textContent: string, sessionId:
   return [{ insertedId: data[0].id }]
 }
 
+/**
+ * Procesa chunks de texto, genera sus embeddings e los inserta junto con los chunks en las tablas de Supabase.
+ *
+ * @param {string[]} chunks - Un array de strings, donde cada string es un chunk de texto a procesar.
+ * @param {string} sessionId - El ID de la sesión a la que pertenecen los chunks.
+ * @param {string} documentId - El ID del documento al que pertenecen los chunks.
+ * @param {(message: object) => Promise<void>} streamResponse - Una función para enviar actualizaciones de progreso al cliente.
+ * @returns {Promise<void>} Una promesa que resuelve una vez que todos los chunks y sus vectores han sido procesados e insertados.
+ */
 export async function processVectors(
   chunks: string[],
   sessionId: string,

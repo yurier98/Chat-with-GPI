@@ -1,7 +1,5 @@
 <script setup lang="ts">
-defineEmits<{
-  (e: 'hideDrawer'): void
-}>()
+const emit = defineEmits(['hideDrawer'])
 
 const toast = useToast()
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { QueryStreamResponse } from '~/types'
+import { quickChats } from '~/types'
 
 const sessionId = useState<string>('sessionId', () => crypto.randomUUID())
 const informativeMessage = useInformativeMessage()
@@ -11,12 +12,16 @@ const isDrawerOpen = ref(false)
 
 const toast = useToast()
 
-async function sendMessage(message: string) {
+async function sendMessage(message: string, selectedModel: string) {
   messages.value.push({ role: 'user', content: message })
   relevantContext.value.isProvided = false
   relevantContext.value.context = []
 
-  const response = useStream<QueryStreamResponse>('/api/query', { messages: messages.value, sessionId: sessionId.value })()
+  const response = useStream<QueryStreamResponse>('/api/query', {
+    messages: messages.value,
+    sessionId: sessionId.value,
+    model: selectedModel,
+  })()
 
   let responseAdded = false
   for await (const chunk of response) {
@@ -90,28 +95,34 @@ const exampleSession = computed(() => exampleSessions.find(session => session.id
 
       <div class="overflow-y-auto h-full">
         <UContainer class="w-full h-full flex flex-col max-h-full max-w-3xl relative">
-          <ChatMessages v-show="!(isExampleSession && !messages.length)" :messages />
+          <ChatMessages v-show="!(isExampleSession && !messages.length)" :messages="messages" />
 
           <!-- Example questions -->
-          <div v-if="isExampleSession && !messages.length" class="grid h-full p-3 place-items-center">
-            <div class="">
-              <h2 class="font-medium text-lg">
-                Try some sample questions
-              </h2>
-              <ul class="list-disc pl-4 cursor-pointer">
-                <li
-                  v-for="(question, i) in exampleSession?.questions"
-                  :key="i"
-                  class="hover:underline"
-                  @click="sendMessage(question)"
-                >
-                  {{ question }}
-                </li>
-              </ul>
+          <div v-if="isExampleSession && !messages.length" class="grid h-full p-6 place-items-center">
+            <div class="flex-1 flex flex-col justify-center gap-4 sm:gap-6 py-8">
+              <h1 class="text-3xl sm:text-4xl text-highlighted font-bold">
+                ¿Cómo puedo ayudarte hoy?
+              </h1>
+              <div class="flex flex-wrap gap-2">
+              <UButton
+                v-for="quickChat in quickChats"
+                :key="quickChat.label"
+                :icon="quickChat.icon"
+                :label="quickChat.label"
+                size="sm"
+                color="neutral"
+                variant="outline"
+                class="rounded-full cursor-pointer"
+                @click="sendMessage(quickChat.label)"
+              />
+            </div>
             </div>
           </div>
 
           <ChatInput class="w-full absolute bottom-0 inset-x-0" :loading="!isChatEnabled" @message="sendMessage" />
+          <div class="w-full absolute bottom-0 inset-x-0 flex flex-col items-center p-4">
+            <ChatPrompt :loading="!isChatEnabled" @message="sendMessage" />
+          </div>
         </UContainer>
       </div>
     </div>

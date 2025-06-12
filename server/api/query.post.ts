@@ -20,8 +20,8 @@ export default defineEventHandler(async (event) => {
 
   event.waitUntil((async () => {
     try {
-      const params = await processUserQuery({ messages, sessionId }, streamResponse)
-      const result = await hubAI().run('@cf/meta/llama-3.1-8b-instruct', { messages: params.messages, stream: true }) as ReadableStream
+      const params = await processUserQuery(event, { messages, sessionId }, streamResponse)
+      const result = await hubAI().run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', { messages: params.messages, stream: true }) as ReadableStream
       // Verifica si el resultado es iterable
       const asyncIterator = (result as any)[Symbol.asyncIterator]
       if (typeof asyncIterator === 'function') {
