@@ -38,7 +38,7 @@ Evalúa que el trabajo incluya los siguientes planes obligatorios:
 
 Identificación del Proyecto: Proyecto informático que resuelva una problemática específica (desarrollo, mantenimiento o investigación)
 
-Plan de Gestión del Tiempo: Cronogramas y gráficas de tiempo utilizando herramientas de gestión especializadas
+Plan de Gestión del Tiempo: Estrategia de gestión del tiempo: técnicas y herramientas para la gestión, unidades de tiempo, responsables. Definición de cronogramas, en dependencia del enfoque y gráficas de seguimiento del avance, de acuerdo a técnicas y herramientas establecidas.
 
 Plan de Recursos: Competencias requeridas del equipo, recursos no humanos, métodos de control y definición del equipo
 
