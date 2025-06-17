@@ -1,15 +1,27 @@
 <script setup lang="ts">
-import type { UploadStreamResponse } from '~/types'
-
-interface Props {
-  sessionId: string
-  isExampleSession: boolean
+// Tipo local para documentos con propiedades de UI
+interface DocumentWithUI {
+  id: string
+  name: string
+  size: number
+  text_content: string | null
+  storage_url: string
+  user_id: string
+  created_at: string
+  progress?: string
+  chunks?: number | null
 }
 
-const props = defineProps<Props>()
+interface UploadStreamResponse {
+  message?: string
+  progress?: number
+  chunks?: number
+  error?: string
+}
+
 const emit = defineEmits<{
-  (e: 'documentUploaded', document: { name: string; size: number; chunks: number | null }): void
-  (e: 'uploadError', error: { fileName: string; message: string }): void
+  (e: 'documentUploaded', document: { name: string, size: number, chunks: number | null }): void
+  (e: 'uploadError', error: { fileName: string, message: string }): void
 }>()
 
 const toast = useToast()
@@ -32,43 +44,102 @@ const { isOverDropZone } = useDropZone(dropZoneRef, {
 
 async function uploadFile(files: File[] | FileList | null) {
   if (!files) return
-  if (props.isExampleSession) {
-    return toast.add({
-      title: 'Sesión de ejemplo',
-      description: 'No se pueden subir archivos a sesiones de ejemplo. Recarga la página para iniciar una nueva sesión.',
-      color: 'error',
-      icon: 'i-heroicons-exclamation-circle',
-    })
-  }
 
   for (const file of files) {
     const form = new FormData()
     form.append('file', file)
-    form.append('sessionId', props.sessionId)
 
-    documents.value.push({
-      name: file.name,
-      size: (Math.round((file.size / 1024 / 1024) * 1000) / 1000), // truncate up to 3 decimal places
-      chunks: null,
-      progress: 'Iniciando subida...',
-    })
-    const document = documents.value.find((doc: { name: string }) => doc.name === file.name)
+    console.log('--- Iniciando proceso de subida para archivo:', file.name)
+    console.log('Estado actual de documents.value antes de buscar:', JSON.parse(JSON.stringify(documents.value)))
+
+    // Encontrar el índice de un documento existente con el mismo nombre
+    const existingDocIndex = documents.value.findIndex((doc: DocumentWithUI) => doc.name === file.name)
+    console.log('Resultado de existingDocIndex:', existingDocIndex)
+    let documentToProcess: DocumentWithUI
+
+    if (existingDocIndex !== -1) {
+      console.log('Documento existente encontrado. Actualizando...')
+      // Si el documento existe, actualiza su estado de progreso
+      const currentDoc = documents.value[existingDocIndex]
+      documentToProcess = {
+        ...currentDoc,
+        progress: 'Iniciando subida...',
+        chunks: null, // Reiniciar chunks si se vuelve a subir o procesar
+      }
+      // Reemplazar el array completo para asegurar la reactividad
+      documents.value = documents.value.map((doc: DocumentWithUI, index: number) =>
+        index === existingDocIndex ? documentToProcess : doc,
+      )
+      console.log('Estado de documents.value después de actualizar existente:', JSON.parse(JSON.stringify(documents.value)))
+    }
+    else {
+      console.log('Documento no encontrado. Añadiendo nuevo...')
+      // Si el documento no existe, añade uno nuevo
+      documentToProcess = {
+        id: crypto.randomUUID(), // Generar un ID único para el documento
+        name: file.name,
+        size: file.size, // Usar el tamaño real del archivo
+        text_content: '', // Inicialmente vacío
+        storage_url: '', // Se llenará después de la subida
+        user_id: '', // Se llenará después de la autenticación
+        created_at: new Date().toISOString(),
+        chunks: null,
+        progress: 'Iniciando subida...',
+      }
+      documents.value = [...documents.value, documentToProcess] // Reemplazar el array completo
+      console.log('Estado de documents.value después de añadir nuevo:', JSON.parse(JSON.stringify(documents.value)))
+    }
+
+    // Una pequeña salvaguarda, aunque 'documentToProcess' siempre debería estar definido ahora
+    if (!documentToProcess) {
+      toast.add({
+        title: 'Error interno',
+        description: 'No se pudo inicializar el documento para la subida.',
+        color: 'error',
+        icon: 'i-heroicons-exclamation-circle',
+      })
+      continue
+    }
 
     try {
       const response = useStream<UploadStreamResponse>('/api/upload', form)()
       for await (const chunk of response) {
-        if (chunk.message) document!.progress = chunk.message
-        if (chunk.chunks) document!.chunks = chunk.chunks
+        // Encontrar el índice de nuevo usando el ID para asegurar que se actualiza el documento correcto
+        const currentDocIndex = documents.value.findIndex((doc: DocumentWithUI) => doc.id === documentToProcess.id)
+        if (currentDocIndex !== -1) {
+          documents.value = documents.value.map((d: DocumentWithUI, index: number) =>
+            index === currentDocIndex
+              ? {
+                  ...d,
+                  progress: chunk.message || d.progress,
+                  chunks: chunk.chunks || d.chunks,
+                }
+              : d,
+          )
+        }
+
         if (chunk.error) throw new Error(chunk.error)
       }
 
-      if (document) {
-        delete document.progress // remove progress when done
-        emit('documentUploaded', {
-          name: document.name,
-          size: document.size,
-          chunks: document.chunks,
-        })
+      // Al finalizar, actualiza el documento con su estado final
+      const finalDocIndex = documents.value.findIndex((doc: DocumentWithUI) => doc.id === documentToProcess.id)
+      if (finalDocIndex !== -1) {
+        const finalDoc = documents.value[finalDocIndex]
+        if (finalDoc) {
+          documents.value = documents.value.map((doc: DocumentWithUI, index: number) =>
+            index === finalDocIndex
+              ? {
+                  ...doc,
+                  progress: undefined, // Eliminar el estado de progreso
+                }
+              : doc,
+          )
+          emit('documentUploaded', {
+            name: finalDoc.name,
+            size: finalDoc.size,
+            chunks: finalDoc.chunks || null,
+          })
+        }
       }
 
       toast.add({
@@ -88,7 +159,8 @@ async function uploadFile(files: File[] | FileList | null) {
         color: 'error',
         icon: 'i-heroicons-exclamation-circle',
       })
-      documents.value = documents.value.filter((doc: { name: string }) => doc.name !== file.name)
+      // Si hay un error, elimina el documento de la lista
+      documents.value = documents.value.filter((doc: DocumentWithUI) => doc.id !== documentToProcess.id)
       emit('uploadError', {
         fileName: file.name,
         // @ts-expect-error unknown error type
@@ -103,8 +175,8 @@ async function uploadFile(files: File[] | FileList | null) {
 <template>
   <UCard
     ref="dropZoneRef"
-    class="transition-all flex flex-grow mb-2 cursor-pointer hover:ring-emerald-500"
-    :class="{ 'ring-blue-500 ring-opacity-50': isOverDropZone }"
+    class="transition-all flex flex-grow mb-2 cursor-pointer hover:ring-primary"
+    :class="{ 'ring-primary ring-opacity-50': isOverDropZone }"
     :ui="{ body: 'flex flex-col items-center justify-center' }"
     @click="open"
   >
@@ -115,4 +187,4 @@ async function uploadFile(files: File[] | FileList | null) {
       Arrastre y suelte o haga clic para cargar
     </p>
   </UCard>
-</template> 
+</template>

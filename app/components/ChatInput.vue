@@ -38,13 +38,5 @@ const sendMessage = () => {
       :disabled="loading "
       @click="sendMessage"
     />
-
-    <UButton
-      size="sm"
-      icon="i-heroicons-arrow-up-20-solid"
-      class="absolute top-5 right-5"
-      :disabled="loading "
-      @click="sendMessage"
-    />
   </div>
 </template>

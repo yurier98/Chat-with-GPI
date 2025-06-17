@@ -4,8 +4,8 @@
         icon="i-lucide:paperclip"
         color="neutral"
         variant="ghost"
-        class="rounded-full"
-        @click="open"
+      class="rounded-full cursor-pointer"
+      @click="open()"
   />
     <template #content>
                 <ul class="gap-2 px-2.5 py-2 text-xs">
@@ -37,14 +37,6 @@ onChange((files: File[] | FileList | null) => uploadFile(files))
 
 async function uploadFile(files: File[] | FileList | null) {
   if (!files) return
-  if (props.isExampleSession) {
-    return toast.add({
-      title: 'Sesión de ejemplo',
-      description: 'No se pueden subir archivos a sesiones de ejemplo. Recarga la página para iniciar una nueva sesión.',
-      color: 'error',
-      icon: 'i-heroicons-exclamation-circle',
-    })
-  }
 
   for (const file of files) {
     const form = new FormData()
@@ -103,9 +95,4 @@ async function uploadFile(files: File[] | FileList | null) {
   }
   reset()
 }
-
 </script>
-
-<style>
-
-</style>
