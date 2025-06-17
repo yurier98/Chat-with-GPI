@@ -1,7 +1,7 @@
 CREATE OR REPLACE FUNCTION match_document_vectors(
   query_embedding vector,
   match_count int,
-  session_id text
+  user_id uuid
 )
 RETURNS TABLE (
   chunk_id uuid,
@@ -17,7 +17,7 @@ BEGIN
   FROM 
     document_vectors dv
   WHERE 
-    dv.metadata->>'sessionId' = session_id
+    dv.metadata->>'userId' = user_id::text
   ORDER BY 
     dv.embedding <=> query_embedding
   LIMIT match_count;
