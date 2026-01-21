@@ -108,12 +108,12 @@ function sendMessage() {
         <ModelSelect />
         <div class="flex items-center gap-2">
           <!-- Popover de preguntas frecuentes -->
-          <UPopover mode="hover" >
+          <UPopover mode="hover">
             <UButton
               icon="i-lucide-lightbulb"
+              size="sm"
               color="neutral"
               variant="ghost"
-              size="sm"
               class="rounded-full"
               :disabled="loading"
             />

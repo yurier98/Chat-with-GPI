@@ -3,6 +3,8 @@ import type { User } from '@supabase/supabase-js'
 
 const user = useSupabaseUser()
 
+definePageMeta({ layout: 'auth' })
+
 // Redirigir al usuario a la página principal después de la autenticación
 watch(user, (newUser: User | null) => {
   if (newUser) {

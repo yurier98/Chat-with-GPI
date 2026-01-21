@@ -12,63 +12,67 @@ import { uploadPDF, extractTextFromPDF, insertDocument, processVectors } from '.
  * @param {H3Event} event - El objeto de evento de H3, que contiene la solicitud y la respuesta.
  */
 export default defineEventHandler(async (event) => {
-  const formData = await readFormData(event)
-  const sessionId = formData.get('sessionId') as string
-  const file = formData.get('file') as File
+  try {
+    const formData = await readFormData(event)
+    const file = formData.get('file') as File
 
-  if (!sessionId) throw createError({ statusCode: 400, message: 'Falta sessionId' })
-  if (!file || !file.size) throw createError({ statusCode: 400, message: 'No se proporcionó ningún archivo' })
-
-  // validación manual del archivo PDF
-  if (file.type !== 'application/pdf') {
-    throw createError({ statusCode: 400, message: 'Solo se permiten archivos PDF' })
-  }
-  if (file.size > 8 * 1024 * 1024) {
-    throw createError({ statusCode: 400, message: 'El tamaño del archivo debe ser menor que 8 MB' })
-  }
-
-  // evitar subir archivos a sesiones de ejemplo
-  const exampleSessionIds = useExampleSessions()
-  if (exampleSessionIds.some(({ id }) => id === sessionId)) {
-    throw createError({ statusCode: 400, message: 'Subir archivos no disponible en sesiones de ejemplo' })
-  }
-
-  // crear un stream y devolverlo
-  const eventStream = createEventStream(event)
-  const streamResponse = (data: object) => eventStream.push(JSON.stringify(data))
-
-  // evitar que el trabajador sea eliminado mientras se procesa
-  event.waitUntil((async () => {
-    try {
-      // subir archivo, extraer texto y insertar documento
-      const [storageUrl, textContent] = await Promise.all([
-        uploadPDF(file, sessionId),
-        extractTextFromPDF(file),
-      ])
-      await streamResponse({ message: 'Extrayendo texto del PDF' })
-
-      const insertResult = await insertDocument(file, textContent, sessionId, storageUrl)
-      const documentId = insertResult[0].insertedId
-
-      // dividir el texto en trozos
-      const splitter = new RecursiveCharacterTextSplitter({
-        chunkSize: 500,
-        chunkOverlap: 100,
-      })
-      const chunks = await splitter.splitText(textContent)
-      await streamResponse({ message: 'Dividiendo el texto en trozos' })
-
-      // generar y almacenar vectores para cada trozo
-      await processVectors(chunks, sessionId, documentId, streamResponse)
-      await streamResponse({ message: 'Insertando vectores', chunks: chunks.length })
+    if (!file || !file.size) {
+      throw createError({ statusCode: 400, message: 'No se proporcionó ningún archivo' })
     }
-    catch (error) {
-      await streamResponse({ error: (error as Error).message })
-    }
-    finally {
-      eventStream.close()
-    }
-  })())
 
-  return eventStream.send()
+    // validación manual del archivo PDF
+    if (file.type !== 'application/pdf') {
+      throw createError({ statusCode: 400, message: 'Solo se permiten archivos PDF' })
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      throw createError({ statusCode: 400, message: 'El tamaño del archivo debe ser menor que 8 MB' })
+    }
+
+    // crear un stream y devolverlo
+    const eventStream = createEventStream(event)
+    const streamResponse = (data: object) => eventStream.push(JSON.stringify(data))
+
+    // evitar que el trabajador sea eliminado mientras se procesa
+    event.waitUntil((async () => {
+      try {
+        // subir archivo, extraer texto y insertar documento
+        const [storageUrl, textContent] = await Promise.all([
+          uploadPDF(file, event),
+          extractTextFromPDF(file),
+        ])
+        await streamResponse({ message: 'Extrayendo texto del PDF' })
+
+        const insertResult = await insertDocument(file, textContent, storageUrl, event)
+        const documentId = insertResult[0].insertedId
+
+        // dividir el texto en trozos
+        const splitter = new RecursiveCharacterTextSplitter({
+          chunkSize: 500,
+          chunkOverlap: 100,
+        })
+        const chunks = await splitter.splitText(textContent)
+        await streamResponse({ message: 'Dividiendo el texto en trozos' })
+
+        // generar y almacenar vectores para cada trozo
+        await processVectors(chunks, documentId, streamResponse, event)
+        await streamResponse({ message: 'Insertando vectores', chunks: chunks.length })
+      }
+      catch (error) {
+        console.error('Error en procesamiento de upload:', error)
+        await streamResponse({ error: (error as Error).message })
+      }
+      finally {
+        eventStream.close()
+      }
+    })())
+
+    return eventStream.send()
+  }
+  catch (error) {
+    console.error('Error en endpoint upload:', error)
+    throw createError({
+      statusCode: 500,
+      message: 'Error interno del servidor en la subida de archivos',
+    })
+  }
 })

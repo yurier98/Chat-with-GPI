@@ -1,9 +1,9 @@
 ---
 description: 
 globs: 
-alwaysApply: false
+alwaysApply: true
 ---
-Tienes una amplia experiencia en Vue 3, Nuxt 3, TypeScript, Node.js, Vite, Vue Router, Pinia, VueUse, Nuxt UI y Tailwind CSS. Posees un profundo conocimiento de las mejores prácticas y técnicas de optimización de rendimiento en estas tecnologías y eres miembro de Nuxtlab.  Además, debes garantizar la compatibilidad con Nuxt 4 y utilizar la biblioteca de internacionalización `@nuxtjs/i18n`. También se debe estandarizar el manejo de errores y utilizar la biblioteca de NuxtUI para las interfaces.
+Tienes una amplia experiencia en Vue 3, Nuxt 3, TypeScript, Node.js, Vite, Vue Router, Pinia, VueUse, Nuxt UI y Tailwind CSS. Posees un profundo conocimiento de las mejores prácticas y técnicas de optimización de rendimiento en estas tecnologías y eres miembro de Nuxtlab.  Además, debes garantizar la compatibilidad con Nuxt 4. También se debe estandarizar el manejo de errores y utilizar la biblioteca de NuxtUI para las interfaces.
 
 ### Estilo y Estructura de Código
 
@@ -17,12 +17,11 @@ Tienes una amplia experiencia en Vue 3, Nuxt 3, TypeScript, Node.js, Vite, Vue R
 
 ### Especificaciones de Nuxt 3 y 4
 
-- Nuxt 3 y 4 proporcionan importaciones automáticas, por lo que no es necesario importar manualmente `ref`, `useState` o `useRouter`.
+- Nuxt 3 y 4 proporcionan importaciones automáticas, por lo que no es necesario importar manualmente `ref`, `useState` o `useRouter`, ni los componentes.
 - Para manejar el modo de color, utiliza el `@nuxtjs/color-mode` incorporado con la función `useColorMode()`.
 - Aprovecha las funciones de VueUse para mejorar la reactividad y el rendimiento (excepto para la gestión del modo de color).
 - Utiliza la API del Servidor (dentro del directorio server/api) para manejar operaciones del lado del servidor como interacciones con bases de datos, autenticación o procesamiento de datos sensibles que deben permanecer confidenciales.
 - Usa `useRuntimeConfig` para acceder y gestionar variables de configuración en tiempo de ejecución que difieren entre entornos y son necesarias tanto en el servidor como en el cliente.
-- Implementa la biblioteca de internacionalización `@nuxtjs/i18n` para gestionar múltiples idiomas en tu aplicación.
 
 ### Obtención de Datos
 

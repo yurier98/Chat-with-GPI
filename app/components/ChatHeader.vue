@@ -15,7 +15,7 @@
         target="_blank"
       />
       <UButton
-        icon="i-heroicons-cog-6-tooth"
+        icon="i-heroicons-bars-3"
         color="neutral"
         variant="ghost"
         class="md:hidden"

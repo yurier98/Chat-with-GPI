@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { User } from '@supabase/supabase-js'
 
+definePageMeta({ layout: 'auth' })
+
 const user = useSupabaseUser()
 const { auth } = useSupabaseClient()
 
@@ -37,7 +39,7 @@ watch(user, (newUser: User | null) => {
 
 <template>
   <div class="p-4 flex items-center justify-center min-h-screen bg-zinc-50 dark:bg-zinc-950">
-    <UCard class="text-center p-8 shadow-lg">
+    <UCard class="text-center p-3 shadow-lg">
       <h1 class="text-3xl font-bold mb-6 text-gray-800 dark:text-gray-100">
         Inicia sesión para continuar
       </h1>
@@ -47,7 +49,7 @@ watch(user, (newUser: User | null) => {
         </p>
         <UButton
           label="Iniciar sesión con Google"
-          icon="i-lucide-google"
+          icon="i-simple-icons-google"
           color="primary"
           size="lg"
           class="w-full justify-center"

@@ -12,6 +12,16 @@ export default defineNuxtConfig({
     'nuxthub-ratelimit',
   ],
 
+  components: [
+    {
+      path: '~/components',
+    },
+    {
+      path: '~/components/common',
+      pathPrefix: false,
+    },
+  ],
+
   // https://devtools.nuxt.com
   devtools: { enabled: true },
 

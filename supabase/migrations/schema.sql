@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS conversation_documents (
   UNIQUE(conversation_id, document_id)
 );
 
--- 7. Índices para optimizar consultas (sin session_id)
+-- 7. Índices para optimizar consultas
 CREATE INDEX IF NOT EXISTS idx_documents_user_id ON documents(user_id);
 CREATE INDEX IF NOT EXISTS idx_documents_created_at ON documents(created_at);
 
@@ -148,6 +148,7 @@ $$;
 ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE document_chunks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE document_vectors ENABLE ROW LEVEL SECURITY;
+
 ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE conversation_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE conversation_documents ENABLE ROW LEVEL SECURITY;
